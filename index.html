@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PSR CRM PRO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<style>
+body { margin:0; font-family:Segoe UI; background:#0A0E1A; color:#E8EAF6; }
+header { padding:15px; background:#131829; font-weight:bold; }
+.container { padding:20px; }
+.card { background:#131829; padding:15px; border-radius:12px; margin-bottom:15px; }
+input, select { width:100%; padding:10px; margin:5px 0; border:none; border-radius:8px; background:#1A1F35; color:#fff; }
+button { padding:10px; border:none; border-radius:8px; background:#B794F6; color:#fff; cursor:pointer; }
+.list-item { padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); }
+
+#calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+.day { padding:10px; background:#1A1F35; text-align:center; border-radius:8px; cursor:pointer; }
+.day.has-fu { background:#B794F6; color:#000; }
+</style>
+</head>
+
+<body>
+
+<header>🏡 PSR CRM PRO</header>
+
+<div class="container">
+
+<div class="card">
+<h3>Add Customer</h3>
+<input id="name" placeholder="Name">
+<input id="mobile" placeholder="Mobile">
+<select id="type">
+<option>Hot</option><option>Warm</option><option>Cold</option>
+</select>
+<button onclick="addCustomer()">Add</button>
+</div>
+
+<div class="card">
+<h3>Customers</h3>
+<div id="customers"></div>
+</div>
+
+<div class="card">
+<h3>Followups</h3>
+<div id="followups"></div>
+</div>
+
+<div class="card">
+<h3>📅 Calendar</h3>
+<div id="calendar"></div>
+<div id="dayFollowups"></div>
+</div>
+
+</div>
+
+<script>
+
+/* ================= FIREBASE CONFIG ================= */
+/* 🔴 REPLACE THIS WITH YOUR OWN */
+const firebaseConfig = {
+  apiKey: "AIzaSyCAr68jWvFvjkzt9cHIVtuKxWfKf6c1ckM",
+  authDomain: "psr-crm.firebaseapp.com",
+  projectId: "psr-crm",
+  storageBucket: "psr-crm.firebasestorage.app",
+  messagingSenderId: "556774492046",
+  appId: "1:556774492046:web:d116b5ab472502bc6f46df"
+};
+
+firebase.initializeApp(firebaseConfig);
+const dbCloud = firebase.firestore();
+
+/* ================= USER ================= */
+
+const USER_ID = localStorage.getItem("psr_user") || prompt("Enter Mobile");
+localStorage.setItem("psr_user", USER_ID);
+
+/* ================= DB ================= */
+
+async function loadDB(){
+  try{
+    const doc = await dbCloud.collection("crm").doc(USER_ID).get();
+    return doc.exists ? doc.data() : { customers:[], followups:[] };
+  }catch(e){
+    return { customers:[], followups:[] };
+  }
+}
+
+function saveDB(db){
+  dbCloud.collection("crm").doc(USER_ID).set(db);
+}
+
+/* ================= ADD CUSTOMER ================= */
+
+async function addCustomer(){
+  let db = await loadDB();
+
+  const c = {
+    id: Date.now(),
+    name: name.value,
+    mobile: mobile.value,
+    type: type.value
+  };
+
+  if(!c.name || !c.mobile){ alert("Fill fields"); return; }
+
+  db.customers.push(c);
+  saveDB(db);
+}
+
+/* ================= FOLLOWUP ================= */
+
+async function addFollowup(id){
+  let db = await loadDB();
+
+  db.followups.push({
+    id: Date.now(),
+    customerId:id,
+    date:new Date().toISOString().split("T")[0],
+    status:"Pending"
+  });
+
+  saveDB(db);
+}
+
+/* ================= RENDER ================= */
+
+async function render(){
+  let db = await loadDB();
+
+  customers.innerHTML = db.customers.map(c=>`
+    <div class="list-item">
+      <b>${c.name}</b> (${c.type})<br>
+      ${c.mobile}<br>
+      <button onclick="addFollowup(${c.id})">Followup</button>
+    </div>
+  `).join("");
+
+  followups.innerHTML = db.followups.map(f=>{
+    const cust = db.customers.find(c=>c.id===f.customerId);
+    return `<div class="list-item">${cust?.name} - ${f.date}</div>`;
+  }).join("");
+
+  renderCalendar(db);
+}
+
+/* ================= CALENDAR ================= */
+
+function renderCalendar(db){
+  calendar.innerHTML = "";
+
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = today.getMonth();
+  const days = new Date(y,m+1,0).getDate();
+
+  for(let d=1; d<=days; d++){
+    const date = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const has = db.followups.some(f=>f.date===date);
+
+    const div = document.createElement("div");
+    div.className = "day " + (has ? "has-fu":"");
+    div.innerText = d;
+    div.onclick = ()=>showDay(date, db);
+
+    calendar.appendChild(div);
+  }
+}
+
+function showDay(date, db){
+  const list = db.followups.filter(f=>f.date===date);
+
+  dayFollowups.innerHTML = list.length
+    ? list.map(f=>{
+        const cust = db.customers.find(c=>c.id===f.customerId);
+        return `<div>${cust?.name}</div>`;
+      }).join("")
+    : "No followups";
+}
+
+/* ================= REALTIME ================= */
+
+dbCloud.collection("crm").doc(USER_ID)
+.onSnapshot(()=>{
+  render();
+});
+
+/* ================= INIT ================= */
+
+render();
+
+</script>
+
+</body>
+</html>
