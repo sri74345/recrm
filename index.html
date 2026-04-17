@@ -2044,7 +2044,7 @@ function App() {
         setShowNotifPanel(false);
         setTab(n.action);
       },
-      style: { display: "flex", gap: 12, padding: "12px 14px", borderRadius: 14, background: "var(--card-bg)", border: `1px solid ${n.priority === "critical" ? "rgba(252,129,74,0.3)" : n.priority === "high" ? `${n.color}30` : "rgba(255,255,255,0.07)"}`, cursor: "pointer", transition: "all .15s", alignItems: "flex-start" },
+      style: { display: "none", gap: 12, padding: "12px 14px", borderRadius: 14, background: "var(--card-bg)", border: `1px solid ${n.priority === "critical" ? "rgba(252,129,74,0.3)" : n.priority === "high" ? `${n.color}30` : "rgba(255,255,255,0.07)"}`, cursor: "pointer", transition: "all .15s", alignItems: "flex-start" },
       onMouseEnter: (e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)",
       onMouseLeave: (e) => e.currentTarget.style.background = "rgba(255,255,255,0.04)"
     },
