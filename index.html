@@ -1925,22 +1925,22 @@ function App() {
           });
         }
         setNotifications(notifs);
-      } catch (e) {
-        console.warn("Notification build error:", e);
-      }
-      if (notifPermission === "granted" && now.getHours() === 9 && now.getMinutes() < 5) {
-        const lastDigest = localStorage.getItem("last_digest_date");
-        if (lastDigest !== todayStr) {
-          try {
-            new Notification("🏡 PS RE CRM \u2014 Good Morning!", {
-              body: `You have ${todayFUs.length} follow-up${todayFUs.length !== 1 ? "s" : ""} today${birthdays.length > 0 ? ` & ${birthdays.length} birthday${birthdays.length !== 1 ? "s" : ""}` : ""}.`,
-              icon: "/favicon.ico",
-              badge: "/favicon.ico"
-            });
-            localStorage.setItem("last_digest_date", todayStr);
-          } catch (e) {
+        if (notifPermission === "granted" && now2.getHours() === 9 && now2.getMinutes() < 5) {
+          const lastDigest = localStorage.getItem("last_digest_date");
+          if (lastDigest !== todayStr2) {
+            try {
+              new Notification("🏡 PS RE CRM \u2014 Good Morning!", {
+                body: `You have ${todayFUs2.length} follow-up${todayFUs2.length !== 1 ? "s" : ""} today${birthdays2.length > 0 ? ` & ${birthdays2.length} birthday${birthdays2.length !== 1 ? "s" : ""}` : ""}.`,
+                icon: "/favicon.ico",
+                badge: "/favicon.ico"
+              });
+              localStorage.setItem("last_digest_date", todayStr2);
+            } catch (e) {
+            }
           }
         }
+      } catch (e) {
+        console.warn("Notification build error:", e);
       }
     };
     buildNotifications();
